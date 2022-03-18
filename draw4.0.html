@@ -168,7 +168,6 @@ d3.csv(csv_url, function(data) {
         for (let idx_state = 0; idx_state < cluster.length; ++idx_state) {
             let state = cluster[idx_state];
             svg.append("rect").datum({"rs" : d.rs, "PIP" : d.PIP, "State" : state, "Geneannotation" : d.Geneannotation})
-                .text(state)
                 .attr("x", idx_rs * width_rs + idx_cluster * width_coarse + idx_state * width_refined)
                 .attr("y", indices_var[d.variable] * (height / n_vars))
                 .attr("width", width_refined)
