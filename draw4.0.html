@@ -25,6 +25,7 @@ body {
     background-color: white;
     border: green;
 }
+
 #my_colorbar {
     position : fixed;
     padding : 0px;
@@ -33,6 +34,11 @@ body {
     top : 10px;
     right : 10px;
     transform: scale(1)
+}
+
+.state_rect {
+    stroke : grey;
+    stroke-width: 1;
 }
 
 </style>
@@ -70,13 +76,17 @@ d3.csv(csv_url, function(data) {
   // Labels of row and columns -> unique identifier of the column called 'group' and 'variable'
   var myGroups = d3.map(data, function(d){return d.rs;}).keys();
   var myVars = d3.map(data, function(d){return d.variable;}).keys();
-  var count_tool = d3.map(data, function(d){return d.x_label;}).keys();
-  let names_rs = d3.map(data, function(d){return d.x_label;}).keys();
-  var length = count_tool.length;
-  let n_rs = names_rs.length - 1;
-  var x_labels = Array.from(data,({x_label})=>x_label);
-  var x_label = x_labels.slice(0,length*12);
-  var x_label = x_label.join('__');
+  let names_rs = d3.map(data, function(d){return d.rs;}).keys();
+  let n_rs = names_rs.length;
+  let n_vars = myVars.length;
+  let indices_rs = {}
+  for (let idx_rs = 0; idx_rs < n_rs; ++idx_rs) {
+    indices_rs[names_rs[idx_rs]] = idx_rs;
+  }
+  let indices_var = {}
+  for (let idx_var = 0; idx_var < n_vars; ++idx_var) {
+    indices_var[myVars[idx_var]] = idx_var;
+  }
   
   // Build X scales and axis:
   var x = d3.scaleBand()
@@ -100,8 +110,7 @@ d3.csv(csv_url, function(data) {
     .select(".domain").remove()
 
   // Build color scale
-  let myColorList = ['white','green', 'red','orange','white'];
-  let State_show = ['Other','Promoter', 'Transcription','Enhancer']
+  let myColorList = ['white','orange', 'green','red'];
   // create a tooltip
   var tooltip = d3.select(id_dataviz)
     .append("div")
@@ -119,12 +128,12 @@ d3.csv(csv_url, function(data) {
       .style("opacity", 1)
     d3.select(this)
       .style("stroke", "black")
+      .style("stroke-width", "3")
       .style("opacity", 1)
   }
   var mousemove = function(d) {
     tooltip
-      .html(d.group+"<br>PIP:  "+" "+ 100*roundFun(d.PIP,2)+"% <br> "+d.State+" ;<br> "+d.Geneannotation)
-      //console.log(myData[d.group][d.variable])
+      .html(d.rs+"<br>PIP:  "+" "+ 100*roundFun(d["PIP"],2)+"% <br> "+d["State"]+" ;<br> "+d["Geneannotation"])
       .style("left", (d3.mouse(this)[0]+70) + "px")
       .style("top", (d3.mouse(this)[1]) + "px")
   }
@@ -132,28 +141,43 @@ d3.csv(csv_url, function(data) {
     tooltip
       .style("opacity", 0)
     d3.select(this)
-      .style("stroke", "none")
+      .style("stroke", "grey")
+      .style("stroke-width", "1")
       .style("opacity", 0.8)
   }
 
-  // add the squares
-  // svg.selectAll()
-  //   .data(data, function(d) {return d.group+':'+d.variable;})
-  //   .enter()
-  //   .append("rect")
-  //     .attr("x", function(d) { return x(d.group) })
-  //     .attr("y", function(d) { return y(d.variable) })
-  //     .attr("rx", 0)
-  //     .attr("ry", 0)
-  //     .attr("width", x.bandwidth() )
-  //     .attr("height", y.bandwidth() )
-  //     .style("fill", function(d) { return myColorList[d.value]} )
-  //     .style("stroke-width", 0)
-  //     .style("stroke", "none")
-  //     .style("opacity", 0.8)
-  //   .on("mouseover", mouseover)
-  //   .on("mousemove", mousemove)
-  //   .on("mouseleave", mouseleave)
+  let width_rs = width / n_rs;
+  for (let k = 0; k < data.length; ++k) {
+    let d = data[k];
+    let states = d.States;
+    let clusters_as_strs = states.split("|");
+    let colors = clusters_as_strs.map((clusters_as_str) => {
+        return myColorList[parseInt(clusters_as_str.split(":")[0])];
+    });
+    let clusters = clusters_as_strs.map((clusters_as_str) => {
+        return clusters_as_str.split(":")[1].split("&");
+    });
+    let width_coarse = width_rs / clusters.length;
+    let idx_rs = indices_rs[d.rs];
+    for (let idx_cluster = 0; idx_cluster < clusters.length; ++idx_cluster) {
+        let cluster = clusters[idx_cluster];
+        let width_refined = width_coarse / cluster.length;
+        for (let idx_state = 0; idx_state < cluster.length; ++idx_state) {
+            let state = cluster[idx_state];
+            svg.append("rect").datum({"PIP" : d.PIP, "State" : state, "Geneannotation" : d.Geneannotation})
+                .attr("x", idx_rs * width_rs + idx_cluster * width_coarse + idx_state * width_refined)
+                .attr("y", indices_var[d.variable] * (height / n_vars))
+                .attr("class", "state_rect")
+                .attr("width", width_refined)
+                .attr("height", (height / n_vars))
+                .style("fill", colors[idx_cluster])
+                .style("opacity", 0.8)
+                .on("mouseover", mouseover)
+                .on("mousemove", mousemove)
+                .on("mouseleave", mouseleave)
+        }
+    }
+  }
   
   for (let i = 0; i < n_rs; ++i) {
     svg.append("text")
@@ -198,7 +222,7 @@ svg.append("text")
 
 }
 
-renderCSV("test3.csv", "#my_dataviz1");
+renderCSV("https://raw.githubusercontent.com/luojw-dwr/yexy_snp/master/test3.csv", "#my_dataviz1");
 
 </script>
 <body>
