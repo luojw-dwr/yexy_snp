@@ -36,9 +36,16 @@ body {
     transform: scale(1)
 }
 
-.state_rect {
+.state_rect_unfocused {
     stroke : grey;
     stroke-width: 1;
+    opacity : 0.8;
+}
+
+.state_rect_focused {
+    stroke : black;
+    stroke-width: 3;
+    opacity : 1;
 }
 
 </style>
@@ -127,23 +134,19 @@ d3.csv(csv_url, function(data) {
     tooltip
       .style("opacity", 1)
     d3.select(this)
-      .style("stroke", "black")
-      .style("stroke-width", "3")
-      .style("opacity", 1)
+      .attr("class", "state_rect_focused")
   }
   var mousemove = function(d) {
     tooltip
       .html(d["rs"]+"<br>PIP:  "+" "+ 100*roundFun(d["PIP"],2)+"% <br> "+d["State"]+" ;<br> "+d["Geneannotation"])
-      .style("left", (d3.mouse(this)[0]+70) + "px")
-      .style("top", (d3.mouse(this)[1]) + "px")
+      .style("left", (d3.mouse(this)[0] + margin.left - 90) + "px")
+      .style("top", (d3.mouse(this)[1] + margin.top - 100) + "px")
   }
   var mouseleave = function(d) {
     tooltip
       .style("opacity", 0)
     d3.select(this)
-      .style("stroke", "grey")
-      .style("stroke-width", "1")
-      .style("opacity", 0.8)
+      .attr("class", "state_rect_unfocused")
   }
 
   let width_rs = width / n_rs;
@@ -165,13 +168,13 @@ d3.csv(csv_url, function(data) {
         for (let idx_state = 0; idx_state < cluster.length; ++idx_state) {
             let state = cluster[idx_state];
             svg.append("rect").datum({"rs" : d.rs, "PIP" : d.PIP, "State" : state, "Geneannotation" : d.Geneannotation})
+                .text(state)
                 .attr("x", idx_rs * width_rs + idx_cluster * width_coarse + idx_state * width_refined)
                 .attr("y", indices_var[d.variable] * (height / n_vars))
-                .attr("class", "state_rect")
                 .attr("width", width_refined)
                 .attr("height", (height / n_vars))
                 .style("fill", colors[idx_cluster])
-                .style("opacity", 0.8)
+                .attr("class", "state_rect_unfocused")
                 .on("mouseover", mouseover)
                 .on("mousemove", mousemove)
                 .on("mouseleave", mouseleave)
