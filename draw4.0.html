@@ -133,7 +133,7 @@ d3.csv(csv_url, function(data) {
   }
   var mousemove = function(d) {
     tooltip
-      .html(d.rs+"<br>PIP:  "+" "+ 100*roundFun(d["PIP"],2)+"% <br> "+d["State"]+" ;<br> "+d["Geneannotation"])
+      .html(d["rs"]+"<br>PIP:  "+" "+ 100*roundFun(d["PIP"],2)+"% <br> "+d["State"]+" ;<br> "+d["Geneannotation"])
       .style("left", (d3.mouse(this)[0]+70) + "px")
       .style("top", (d3.mouse(this)[1]) + "px")
   }
@@ -164,7 +164,7 @@ d3.csv(csv_url, function(data) {
         let width_refined = width_coarse / cluster.length;
         for (let idx_state = 0; idx_state < cluster.length; ++idx_state) {
             let state = cluster[idx_state];
-            svg.append("rect").datum({"PIP" : d.PIP, "State" : state, "Geneannotation" : d.Geneannotation})
+            svg.append("rect").datum({"rs" : d.rs, "PIP" : d.PIP, "State" : state, "Geneannotation" : d.Geneannotation})
                 .attr("x", idx_rs * width_rs + idx_cluster * width_coarse + idx_state * width_refined)
                 .attr("y", indices_var[d.variable] * (height / n_vars))
                 .attr("class", "state_rect")
